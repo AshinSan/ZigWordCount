@@ -23,6 +23,7 @@ const Buffer = struct {
 };
 
 const Flags = struct {
+    verbose: bool,
     line: bool,
     word: bool,
     char: bool,
@@ -31,6 +32,7 @@ const Flags = struct {
 
     fn create() Flags {
         return .{
+            .verbose = false,
             .line = false,
             .word = false,
             .char = false,
@@ -60,6 +62,8 @@ const help =
     \\-l                    only show amount of lines
     \\-w                    only show amount of words
     \\-c                    only show amount of characters
+    \\
+    \\-v                    verbose mode (placeholder)
     \\
     \\You can combine -l -w -c into -lwc -clw to show several (show all is default)
     \\
@@ -91,6 +95,7 @@ pub fn main() !void {
                         try println("{s}\n\n", .{help});
                         return;
                     },
+                    'v' => flags.verbose = true,
                     'l' => flags.line = true,
                     'w' => flags.word = true,
                     'c' => flags.char = true,
