@@ -82,27 +82,25 @@ pub fn main() !void {
 
     var flags = Flags.create();
 
-    if (args.len > 2) {
-        while (i < args.len) : (i += 1) {
-            const arg = args[i];
-            if (arg[0] == '-') {
-                for (arg) |char| {
-                    switch (char) {
-                        'h' => {
-                            try println("{s}\n\n", .{help});
-                            return;
-                        },
-                        'l' => flags.line = true,
-                        'w' => flags.word = true,
-                        'c' => flags.char = true,
-                        else => {},
-                    }
+    while (i < args.len) : (i += 1) {
+        const arg = args[i];
+        if (arg[0] == '-') {
+            for (arg) |char| {
+                switch (char) {
+                    'h' => {
+                        try println("{s}\n\n", .{help});
+                        return;
+                    },
+                    'l' => flags.line = true,
+                    'w' => flags.word = true,
+                    'c' => flags.char = true,
+                    else => {},
                 }
-            } else if (file_path == null) {
-                file_path = arg;
-            } else {
-                try println("Too many positional arguments.\n", .{});
             }
+        } else if (file_path == null) {
+            file_path = arg;
+        } else {
+            try println("Too many positional arguments.\n", .{});
         }
     }
 
