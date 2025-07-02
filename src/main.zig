@@ -63,7 +63,7 @@ const help =
     \\-w                    only show amount of words
     \\-c                    only show amount of characters
     \\
-    \\-v                    verbose mode (placeholder)
+    \\-v                    show verbose mode (placeholder)
     \\
     \\You can combine -l -w -c into -lwc -clw to show several (show all is default)
     \\
