@@ -1,10 +1,8 @@
 # zwc - Zig Word Count
 
-a small project I did for learning Zig, and programming in general.
+This is a small project I made to learn Zig and get comfortable with systems programming.
 
-`zwc` is a CLI utility written in Zig to count the number of
-**lines**, **words**, **characters** in a text file similar to
-the UNIX `wc` CLI.
+`zwc` is a CLI utility written in Zig to count the number of **lines**, **words**, **characters** in a text file similar to the UNIX `wc` CLI.
 
 ## Usage
 
@@ -19,7 +17,7 @@ zwc [FILE] [OPTION]
 - `-w`: Show only word count
 - `-c`: Show only character count
 
-Tou can combine options:
+You can combine options:
 
 `zwc input.txt -lwc` or `zwc input.txt -cw` etc.
 

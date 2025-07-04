@@ -1,4 +1,8 @@
 const std = @import("std");
+const Flags = @import("flags.zig").Flags;
+const print = @import("print.zig");
+
+const testing = std.testing;
 
 const File = std.fs.File;
 
@@ -19,34 +23,6 @@ const Buffer = struct {
 
     fn deinit(self: *Self) void {
         self.allocator.free(self.str);
-    }
-};
-
-const Flags = struct {
-    verbose: bool,
-    line: bool,
-    word: bool,
-    char: bool,
-
-    const Self = @This();
-
-    fn create() Flags {
-        return .{
-            .verbose = false,
-            .line = false,
-            .word = false,
-            .char = false,
-        };
-    }
-
-    fn setDefaultIfFalse(self: *Self) void {
-        if (self.line) return;
-        if (self.word) return;
-        if (self.char) return;
-
-        self.line = true;
-        self.word = true;
-        self.char = true;
     }
 };
 
@@ -77,7 +53,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        try println("Type: zwc -h for help", .{});
+        try print.println("Type: zwc -h for help", .{});
         return;
     }
 
@@ -92,7 +68,7 @@ pub fn main() !void {
             for (arg) |char| {
                 switch (char) {
                     'h' => {
-                        try println("{s}\n\n", .{help});
+                        try print.println("{s}\n\n", .{help});
                         return;
                     },
                     'v' => flags.verbose = true,
@@ -105,26 +81,26 @@ pub fn main() !void {
         } else if (file_path == null) {
             file_path = arg;
         } else {
-            try println("Too many positional arguments.\n", .{});
+            try print.println("Too many positional arguments.\n", .{});
         }
     }
 
     flags.setDefaultIfFalse();
 
     if (file_path == null) {
-        try println("Missing file path.\n", .{});
+        try print.err("Missing file path.\n", .{});
         return;
     }
 
     const cwd = std.fs.cwd();
     const file = cwd.openFile(file_path.?, .{}) catch |err| switch (err) {
         error.FileNotFound => {
-            try println("File doesn't exist.", .{});
+            try print.err("File doesn't exist.", .{err});
             return;
         },
         else => {
-            try println("Error: {}", .{err});
-            return err;
+            try print.err(null, .{err});
+            return;
         },
     };
     defer file.close();
@@ -143,7 +119,15 @@ fn zwc(file: File, allocator: std.mem.Allocator, flags: Flags) !void {
         var buffer = Buffer.init(allocator);
         defer buffer.deinit();
 
-        try readLineDynamic(reader, &buffer, '\n');
+        readLineDynamic(reader, &buffer, '\n') catch |err| switch (err) {
+            error.IsDir => {
+                try print.err("That is a directory. Please choose a file.", .{err});
+                return;
+            },
+            else => {
+                try print.err(null, .{err});
+            },
+        };
 
         if (buffer.len == 0) break;
 
@@ -157,9 +141,9 @@ fn zwc(file: File, allocator: std.mem.Allocator, flags: Flags) !void {
         }
     }
 
-    if (flags.line) try println("> Line count -- {d}", .{line_count});
-    if (flags.word) try println("> word count -- {d}", .{word_count});
-    if (flags.char) try println("> char count -- {d}", .{char_count});
+    if (flags.line) try print.println("> Line count -- {d}", .{line_count});
+    if (flags.word) try print.println("> word count -- {d}", .{word_count});
+    if (flags.char) try print.println("> char count -- {d}", .{char_count});
 }
 
 fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
@@ -182,20 +166,4 @@ fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
 
         if (byte == delimiter) break;
     }
-}
-
-fn println(comptime fmt: []const u8, args: anytype) !void {
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print(fmt, args);
-    try stdout.print("\n", .{});
-}
-
-fn print(comptime fmt: []const u8, args: anytype) !void {
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print(fmt, args);
-}
-
-fn writeAll(fmt: []const u8) !void {
-    const stdout = std.io.getStdOut().writer();
-    try stdout.writeAll(fmt);
 }
