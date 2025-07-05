@@ -4,14 +4,24 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{ .name = "zwc", .root_module = b.createModule(.{
-        .root_source_file = b.path("src/main.zig"),
+    const mod = b.addModule("Build", .{
+        .root_source_file = b.path("src/root.zig"),
 
         .target = target,
+    });
 
-        .optimize = optimize,
-    }) });
+    const exe = b.addExecutable(.{
+        .name = "zwc",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
 
+            .target = target,
+
+            .optimize = optimize,
+
+            .imports = &.{.{ .name = "Build", .module = mod }},
+        }),
+    });
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Build and run zwc");
@@ -25,6 +35,12 @@ pub fn build(b: *std.Build) void {
         run_cmd.addArgs(args);
     }
 
+    const mod_tests = b.addTest(.{
+        .root_module = mod,
+    });
+
+    const run_mod_tests = b.addRunArtifact(mod_tests);
+
     const exe_tests = b.addTest(.{
         .root_module = exe.root_module,
     });
@@ -33,4 +49,5 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_exe_tests.step);
+    test_step.dependOn(&run_mod_tests.step);
 }
