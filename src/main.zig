@@ -11,11 +11,6 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
-    if (args.len < 2) {
-        try print.println("Type: zwc -h for help", .{});
-        return;
-    }
-
     var file_path: ?[]const u8 = null;
     var i: usize = 1;
 
@@ -46,25 +41,28 @@ pub fn main() !void {
 
     flags.setDefaultIfFalse();
 
-    if (file_path == null) {
-        try print.err("Missing file path.\n", .{});
-        return;
-    }
-
     const cwd = std.fs.cwd();
-    const file = cwd.openFile(file_path.?, .{}) catch |err| switch (err) {
-        error.FileNotFound => {
-            try print.err("File doesn't exist.", .{err});
-            return;
-        },
-        else => {
-            try print.err(null, .{err});
-            return;
-        },
-    };
-    defer file.close();
 
-    const reader = file.reader();
+    const reader =
+        if (file_path == null) stdin: {
+            if (std.io.getStdIn().isTty()) {
+                try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{});
+            }
+            break :stdin std.io.getStdIn().reader();
+        } else blk: {
+            const file = cwd.openFile(file_path.?, .{}) catch |err| switch (err) {
+                error.FileNotFound => {
+                    try print.err("No such file or directory.", .{});
+                    return;
+                },
+                else => {
+                    try print.err(null, .{err});
+                    return;
+                },
+            };
+            defer file.close();
+            break :blk file.reader();
+        };
 
     try zwc(reader, allocator, flags);
 }
@@ -87,6 +85,9 @@ fn printHelp() !void {
         \\
         \\You can combine -l -w -c into -lwc -clw to show several (show all is default)
         \\
-        \\Non existing valid arguments will be ignored.   
+        \\Non existing valid arguments will be ignored.  
+        \\
+        \\If passing an argument without any attempt of a filepath your terminal will 
+        \\ugrab your input ntil you send the EOF command -> [CTRL] + [D] 
     , .{});
 }

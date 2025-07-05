@@ -32,10 +32,9 @@ pub fn zwc(reader: anytype, allocator: std.mem.Allocator, flags: Flags) !void {
     while (true) {
         var buffer = Buffer.init(allocator);
         defer buffer.deinit();
-
         readLineDynamic(reader, &buffer, '\n') catch |err| switch (err) {
             error.IsDir => {
-                try print.err("That is a directory. Please choose a file.", .{err});
+                try print.err("That is a directory. Please choose a file.", .{});
                 return;
             },
             else => {

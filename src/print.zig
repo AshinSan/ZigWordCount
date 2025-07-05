@@ -14,7 +14,7 @@ pub fn print(comptime fmt: []const u8, args: anytype) !void {
 pub fn err(comptime fmt: ?[]const u8, args: anytype) !void {
     const stderr = std.io.getStdErr().writer();
     if (fmt != null) {
-        try stderr.print("{?s} {}\n", .{ fmt, args });
+        try stderr.print("{?s}\n", .{fmt});
         return;
     }
     try stderr.print("Error: {}\n", .{args});
