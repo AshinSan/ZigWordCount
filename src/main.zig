@@ -43,14 +43,14 @@ pub fn main() !void {
 
     const cwd = std.fs.cwd();
 
-    const reader =
+    const file =
         if (file_path == null) stdin: {
             if (std.io.getStdIn().isTty()) {
                 try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{});
             }
-            break :stdin std.io.getStdIn().reader();
-        } else blk: {
-            const file = cwd.openFile(file_path.?, .{}) catch |err| switch (err) {
+            break :stdin std.io.getStdIn();
+        } else fl: {
+            const fl = cwd.openFile(file_path.?, .{}) catch |err| switch (err) {
                 error.FileNotFound => {
                     try print.err("No such file or directory.", .{});
                     return;
@@ -60,9 +60,11 @@ pub fn main() !void {
                     return;
                 },
             };
-            defer file.close();
-            break :blk file.reader();
+            break :fl fl;
         };
+    defer file.close();
+
+    const reader = file.reader();
 
     try zwc(reader, allocator, flags);
 }
