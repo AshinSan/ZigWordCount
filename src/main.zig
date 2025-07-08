@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const Flags = @import("flags.zig").Flags;
 const print = @import("print.zig");
 
@@ -46,11 +47,16 @@ pub fn main() !void {
     const file =
         if (file_path == null) stdin: {
             if (std.io.getStdIn().isTty()) {
-                try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{});
+                switch (builtin.target.os.tag) {
+                    .windows => try print.err("Reading from standard input... press Ctrl+Z tp finish.\n", .{}),
+                    .linux => try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
+                    .macos => try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
+                    else => try print.err("Reading from stdin... Unkown OS. Don't know how to send EOF.\n"),
+                }
             }
             break :stdin std.io.getStdIn();
         } else fl: {
-            const fl = cwd.openFile(file_path.?, .{}) catch |err| switch (err) {
+            const fl = cwd.openFile(file_path.?, .{ .mode = .read_only }) catch |err| switch (err) {
                 error.FileNotFound => {
                     try print.err("No such file or directory.", .{});
                     return;
@@ -66,7 +72,13 @@ pub fn main() !void {
 
     const reader = file.reader();
 
-    try zwc(reader, allocator, flags);
+    const stdout = std.io.getStdOut();
+    const writer = stdout.writer();
+
+    zwc(reader, writer, allocator, flags) catch |err| switch (err) {
+        error.IsDir => try print.err("That's a directoy! Please choose a file", .{}),
+        else => try print.err(null, .{err}),
+    };
 }
 
 fn printHelp() !void {
@@ -90,6 +102,6 @@ fn printHelp() !void {
         \\Non existing valid arguments will be ignored.  
         \\
         \\If passing an argument without any attempt of a filepath your terminal will 
-        \\ugrab your input ntil you send the EOF command -> [CTRL] + [D] 
+        \\grab your input until you send the EOF command -> [CTRL] + [D] 
     , .{});
 }

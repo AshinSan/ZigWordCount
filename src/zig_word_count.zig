@@ -1,6 +1,5 @@
 const std = @import("std");
 const Flags = @import("flags.zig").Flags;
-const print = @import("print.zig");
 
 const testing = std.testing;
 
@@ -24,7 +23,7 @@ const Buffer = struct {
     }
 };
 
-pub fn zwc(reader: anytype, allocator: std.mem.Allocator, flags: Flags) !void {
+pub fn zwc(reader: anytype, writer: anytype, allocator: std.mem.Allocator, flags: Flags) !void {
     var line_count: usize = 0;
     var word_count: usize = 0;
     var char_count: usize = 0;
@@ -32,15 +31,8 @@ pub fn zwc(reader: anytype, allocator: std.mem.Allocator, flags: Flags) !void {
     while (true) {
         var buffer = Buffer.init(allocator);
         defer buffer.deinit();
-        readLineDynamic(reader, &buffer, '\n') catch |err| switch (err) {
-            error.IsDir => {
-                try print.err("That is a directory. Please choose a file.", .{});
-                return;
-            },
-            else => {
-                try print.err(null, .{err});
-            },
-        };
+
+        try readLineDynamic(reader, &buffer, '\n');
 
         if (buffer.len == 0) break;
 
@@ -54,9 +46,9 @@ pub fn zwc(reader: anytype, allocator: std.mem.Allocator, flags: Flags) !void {
         }
     }
 
-    if (flags.line) try print.println("> Line count -- {d}", .{line_count});
-    if (flags.word) try print.println("> word count -- {d}", .{word_count});
-    if (flags.char) try print.println("> char count -- {d}", .{char_count});
+    if (flags.line) try writer.print("> Line count -- {d}\n", .{line_count});
+    if (flags.word) try writer.print("> word count -- {d}\n", .{word_count});
+    if (flags.char) try writer.print("> char count -- {d}\n", .{char_count});
 }
 
 fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
@@ -79,6 +71,37 @@ fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
 
         if (byte == delimiter) break;
     }
+}
+
+test "Does it write well to writer" {
+    var buffer: [56]u8 = undefined;
+    var stream = std.io.fixedBufferStream(&buffer);
+    const b_writer = stream.writer();
+
+    const text =
+        \\This is a test text. It has:
+        \\4 lines
+        \\12 words
+        \\60 characters.
+    ;
+    var t_stream = std.io.fixedBufferStream(text);
+    const t_reader = t_stream.reader();
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+
+    var flags = Flags.create();
+    flags.setDefaultIfFalse();
+
+    try zwc(t_reader, b_writer, allocator, flags);
+
+    const expected =
+        \\> Line count -- 4
+        \\> word count -- 13
+        \\> char count -- 60
+        \\
+    ;
+    try testing.expectEqualStrings(expected, &buffer);
 }
 
 test "Is line too big for allocated memory" {
