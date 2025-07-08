@@ -102,6 +102,6 @@ fn printHelp() !void {
         \\Non existing valid arguments will be ignored.  
         \\
         \\If passing an argument without any attempt of a filepath your terminal will 
-        \\grab your input until you send the EOF command -> [CTRL] + [D] 
+        \\grab your input until you send the EOF command. 
     , .{});
 }
