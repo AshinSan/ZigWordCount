@@ -33,7 +33,7 @@ pub fn main() !void {
                     'w' => flags.word = true,
                     'c' => flags.char = true,
                     else => {
-                        try print.println("zwc: invalid option -- '{}'", .{char});
+                        try print.println("zwc: invalid option -- '{c}'", .{char});
                         try print.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
                         std.process.exit(1);
                     },
