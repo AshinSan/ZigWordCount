@@ -2,7 +2,6 @@ const std = @import("std");
 const testing = std.testing;
 
 pub const Flags = struct {
-    verbose: bool,
     line: bool,
     word: bool,
     char: bool,
@@ -11,7 +10,6 @@ pub const Flags = struct {
 
     pub fn create() Flags {
         return .{
-            .verbose = false,
             .line = false,
             .word = false,
             .char = false,
