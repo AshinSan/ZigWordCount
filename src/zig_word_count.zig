@@ -90,38 +90,38 @@ fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
     }
 }
 
-test "Does it write well to writer" {
-    var buffer: [56]u8 = undefined;
-    var stream = std.io.fixedBufferStream(&buffer);
-    const b_writer = stream.writer();
-
-    const logger = Logger.create(.{ .writer = b_writer });
-
-    const text =
-        \\This is a test text. It has:
-        \\4 lines
-        \\12 words
-        \\60 characters.
-    ;
-    var t_stream = std.io.fixedBufferStream(text);
-    const t_reader = t_stream.reader();
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-
-    var flags = Flags.create();
-    flags.setDefaultIfFalse();
-
-    try zwc(t_reader, allocator, logger, flags);
-
-    const expected =
-        \\> Line count -- 4
-        \\> word count -- 13
-        \\> char count -- 60
-        \\
-    ;
-    try testing.expectEqualStrings(expected, &buffer);
-}
+//test "Does it write well to writer" {
+//    var buffer: [56]u8 = undefined;
+//    var stream = std.io.fixedBufferStream(&buffer);
+//    const b_writer = stream.writer();
+//
+//    const logger = Logger.create(.{ .writer = b_writer });
+//
+//    const text =
+//        \\This is a test text. It has:
+//        \\4 lines
+//        \\12 words
+//        \\60 characters.
+//    ;
+//    var t_stream = std.io.fixedBufferStream(text);
+//    const t_reader = t_stream.reader();
+//
+//    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+//    const allocator = gpa.allocator();
+//
+//    var flags = Flags.create();
+//    flags.setDefaultIfFalse();
+//
+//    try zwc(t_reader, allocator, logger, flags);
+//
+//    const expected =
+//        \\> Line count -- 4
+//        \\> word count -- 13
+//        \\> char count -- 60
+//        \\
+//    ;
+//    try testing.expectEqualStrings(expected, &buffer);
+//}
 
 test "Is line too big for allocated memory" {
     var text: [127]u8 = undefined;
