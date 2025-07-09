@@ -1,6 +1,6 @@
 const std = @import("std");
 const Flags = @import("flags.zig").Flags;
-const print = @import("print.zig");
+const Logger = @import("logger.zig").Logger;
 
 const testing = std.testing;
 
@@ -24,7 +24,7 @@ const Buffer = struct {
     }
 };
 
-pub fn zwc(reader: anytype, writer: anytype, allocator: std.mem.Allocator, flags: Flags) !void {
+pub fn zwc(reader: anytype, allocator: std.mem.Allocator, logger: Logger, flags: Flags) !void {
     var line_count: usize = 0;
     var word_count: usize = 0;
     var char_count: usize = 0;
@@ -49,26 +49,23 @@ pub fn zwc(reader: anytype, writer: anytype, allocator: std.mem.Allocator, flags
         while (words.next() != null) {
             word_count += 1;
         }
-
-        if (flags.verbose) {
-            if (flags.line) {
-                try print.verboseStderr("Line: {} ", .{verbose_line_count.*});
-            }
-            if (flags.word) {
-                try print.verboseStderr("Words: {} ", .{word_count - verbose_word_count});
-                verbose_word_count = word_count;
-            }
-            if (flags.char) {
-                try print.verboseStderr("Chars: {}", .{char_count - verbose_char_count});
-                verbose_char_count = char_count;
-            }
-            try print.err("\n", .{});
+        if (flags.line) {
+            try logger.verbose("Line: {} ", .{verbose_line_count.*});
         }
+        if (flags.word) {
+            try logger.verbose("Words: {} ", .{word_count - verbose_word_count});
+            verbose_word_count = word_count;
+        }
+        if (flags.char) {
+            try logger.verbose("Chars: {}", .{char_count - verbose_char_count});
+            verbose_char_count = char_count;
+        }
+        try logger.verbose("\n", .{});
     }
 
-    if (flags.line) try writer.print("> Line count -- {d}\n", .{line_count});
-    if (flags.word) try writer.print("> word count -- {d}\n", .{word_count});
-    if (flags.char) try writer.print("> char count -- {d}\n", .{char_count});
+    if (flags.line) try logger.info("> Line count -- {d}\n", .{line_count});
+    if (flags.word) try logger.info("> word count -- {d}\n", .{word_count});
+    if (flags.char) try logger.info("> char count -- {d}\n", .{char_count});
 }
 
 fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
@@ -98,6 +95,8 @@ test "Does it write well to writer" {
     var stream = std.io.fixedBufferStream(&buffer);
     const b_writer = stream.writer();
 
+    const logger = Logger.create(.{ .writer = b_writer });
+
     const text =
         \\This is a test text. It has:
         \\4 lines
@@ -113,7 +112,7 @@ test "Does it write well to writer" {
     var flags = Flags.create();
     flags.setDefaultIfFalse();
 
-    try zwc(t_reader, b_writer, allocator, flags);
+    try zwc(t_reader, allocator, logger, flags);
 
     const expected =
         \\> Line count -- 4

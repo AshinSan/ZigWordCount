@@ -1,12 +1,7 @@
 const std = @import("std");
-const print = @import("print.zig");
-const testing = std.testing;
+const Logger = @import("logger.zig").Logger;
 
-//const version = std.SemanticVersion{
-//    .major = 0,
-//    .minor = 0,
-//    .patch = 1,
-//};
+const testing = std.testing;
 
 const config = @import("config");
 
@@ -37,7 +32,7 @@ pub const Flags = struct {
         self.char = true;
     }
 
-    pub fn checkArguments(self: *Self, args: [][:0]u8) !?[]const u8 {
+    pub fn checkArguments(self: *Self, args: [][:0]u8, logger: Logger) !?[]const u8 {
         var file_path: ?[]const u8 = null;
         var i: usize = 1;
 
@@ -48,7 +43,7 @@ pub const Flags = struct {
                     switch (char) {
                         '-' => continue,
                         'h' => {
-                            try printHelp();
+                            try printHelp(logger);
                             std.process.exit(0);
                         },
                         'l' => self.line = true,
@@ -56,18 +51,18 @@ pub const Flags = struct {
                         'c' => self.char = true,
                         'v' => self.verbose = true,
                         else => {
-                            try print.println("zwc: invalid option -- '{c}'", .{char});
-                            try print.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
+                            try logger.err("zwc: invalid option -- '{c}'", .{char});
+                            try logger.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
                             std.process.exit(1);
                         },
                     }
                 }
             } else if (std.mem.eql(u8, arg[0..2], "--")) {
                 if (std.mem.eql(u8, arg, "--help")) {
-                    try printHelp();
+                    try printHelp(logger);
                     std.process.exit(0);
                 } else if (std.mem.eql(u8, arg, "--version")) {
-                    try print.println("zwc version {s}", .{config.version});
+                    try logger.info("zwc version {s}", .{config.version});
                     std.process.exit(0);
                 } else if (std.mem.eql(u8, arg, "--line")) {
                     self.line = true;
@@ -78,14 +73,14 @@ pub const Flags = struct {
                 } else if (std.mem.eql(u8, arg, "--verbose")) {
                     self.verbose = true;
                 } else {
-                    try print.println("zwc: invalid option -- '{s}'", .{arg});
-                    try print.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
+                    try logger.err("zwc: invalid option -- '{s}'", .{arg});
+                    try logger.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
                     std.process.exit(1);
                 }
             } else if (file_path == null) {
                 file_path = arg;
             } else {
-                try print.err("Too many positional arguments.\n", .{});
+                try logger.err("Too many positional arguments.\n", .{});
                 std.process.exit(1);
             }
         }
@@ -93,8 +88,8 @@ pub const Flags = struct {
         return file_path;
     }
 
-    fn printHelp() !void {
-        try print.println(
+    fn printHelp(logger: Logger) !void {
+        try logger.info(
             \\Zig Word Count
             \\
             \\Usage: zwc [FILE] [OPTION]

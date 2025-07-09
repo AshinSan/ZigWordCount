@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const print = @import("print.zig");
+
+const Logger = @import("logger.zig").Logger;
 
 const Flags = @import("flags.zig").Flags;
 
@@ -17,7 +18,11 @@ pub fn main() !void {
 
     var flags = Flags.create();
 
-    const file_path = try flags.checkArguments(args);
+    var logger = Logger.create(.{});
+
+    const file_path = try flags.checkArguments(args, logger);
+
+    logger.verbose_mode = flags.verbose;
 
     flags.setDefaultIfFalse();
 
@@ -25,25 +30,25 @@ pub fn main() !void {
 
     const file =
         if (file_path == null) stdin: {
-            if (flags.verbose) try print.verboseStderr("Attempting to read from stdin.\n", .{});
+            try logger.verbose("Attempting to read from stdin.\n", .{});
             if (std.io.getStdIn().isTty()) {
                 switch (builtin.target.os.tag) {
-                    .windows => try print.println("Reading from standard input... press Ctrl+Z tp finish.\n", .{}),
-                    .linux => try print.println("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
-                    .macos => try print.println("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
-                    else => try print.println("Reading from stdin... Unkown OS. Don't know how to send EOF.\n"),
+                    .windows => try logger.info("Reading from standard input... press Ctrl+Z tp finish.\n", .{}),
+                    .linux => try logger.info("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
+                    .macos => try logger.info("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
+                    else => try logger.info("Reading from stdin... Unkown OS. Don't know how to send EOF.\n"),
                 }
             }
             break :stdin std.io.getStdIn();
         } else fl: {
-            if (flags.verbose) try print.verboseStderr("Attempting to open {?s}\n", .{file_path});
+            try logger.verbose("Attempting to open {?s}\n", .{file_path});
             const fl = cwd.openFile(file_path.?, .{ .mode = .read_only }) catch |err| switch (err) {
                 error.FileNotFound => {
-                    try print.err("No such file in directory", .{});
+                    try logger.err("No such file in directory", .{});
                     return;
                 },
                 else => {
-                    try print.err(null, .{err});
+                    try logger.err("{any}", .{err});
                     return;
                 },
             };
@@ -53,13 +58,10 @@ pub fn main() !void {
 
     const reader = file.reader();
 
-    const stdout = std.io.getStdOut();
-    const writer = stdout.writer();
-
-    zwc(reader, writer, allocator, flags) catch |err| switch (err) {
-        error.IsDir => try print.err("That's a directoy! Please choose a file", .{}),
-        else => try print.err(null, .{err}),
+    zwc(reader, allocator, logger, flags) catch |err| switch (err) {
+        error.IsDir => try logger.err("That's a directoy! Please choose a file", .{}),
+        else => try logger.err("{any}", .{err}),
     };
 
-    if (flags.verbose) try print.verboseStderr("Execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms});
+    try logger.verbose("Execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms});
 }
