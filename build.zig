@@ -1,4 +1,5 @@
 const std = @import("std");
+const zon = @import("build.zig.zon");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -22,6 +23,14 @@ pub fn build(b: *std.Build) void {
             .imports = &.{.{ .name = "Build", .module = mod }},
         }),
     });
+
+    //const version = b.option([]const u8, "version", "application version string") orelse "0.0.0";
+
+    const options = b.addOptions();
+    options.addOption([]const u8, "version", zon.version);
+
+    exe.root_module.addOptions("config", options);
+
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Build and run zwc");

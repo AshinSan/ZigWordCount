@@ -1,7 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const Flags = @import("flags.zig").Flags;
 const print = @import("print.zig");
+
+const Flags = @import("flags.zig").Flags;
 
 const zwc = @import("zig_word_count.zig").zwc;
 

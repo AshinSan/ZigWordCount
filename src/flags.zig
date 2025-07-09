@@ -2,11 +2,13 @@ const std = @import("std");
 const print = @import("print.zig");
 const testing = std.testing;
 
-const version = std.SemanticVersion{
-    .major = 0,
-    .minor = 0,
-    .patch = 1,
-};
+//const version = std.SemanticVersion{
+//    .major = 0,
+//    .minor = 0,
+//    .patch = 1,
+//};
+
+const config = @import("config");
 
 pub const Flags = struct {
     line: bool,
@@ -62,7 +64,7 @@ pub const Flags = struct {
                     try printHelp();
                     std.process.exit(0);
                 } else if (std.mem.eql(u8, arg, "--version")) {
-                    try print.println("zwc version {}.{}.{}", .{ version.major, version.minor, version.patch });
+                    try print.println("zwc version {s}", .{config.version});
                     std.process.exit(0);
                 } else if (std.mem.eql(u8, arg, "--line")) {
                     self.line = true;
