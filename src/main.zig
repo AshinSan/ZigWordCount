@@ -7,6 +7,8 @@ const Flags = @import("flags.zig").Flags;
 const zwc = @import("zig_word_count.zig").zwc;
 
 pub fn main() !void {
+    var timer = try std.time.Timer.start();
+
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
@@ -58,4 +60,6 @@ pub fn main() !void {
         error.IsDir => try print.err("That's a directoy! Please choose a file", .{}),
         else => try print.err(null, .{err}),
     };
+
+    if (flags.verbose) try print.verboseStderr("Execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms});
 }
