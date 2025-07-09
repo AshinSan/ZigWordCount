@@ -23,16 +23,18 @@ pub fn main() !void {
 
     const file =
         if (file_path == null) stdin: {
+            if (flags.verbose) try print.verboseStderr("Attempting to read from stdin.\n", .{});
             if (std.io.getStdIn().isTty()) {
                 switch (builtin.target.os.tag) {
-                    .windows => try print.err("Reading from standard input... press Ctrl+Z tp finish.\n", .{}),
-                    .linux => try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
-                    .macos => try print.err("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
-                    else => try print.err("Reading from stdin... Unkown OS. Don't know how to send EOF.\n"),
+                    .windows => try print.println("Reading from standard input... press Ctrl+Z tp finish.\n", .{}),
+                    .linux => try print.println("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
+                    .macos => try print.println("Reading from standard input... press Ctrl+D tp finish.\n", .{}),
+                    else => try print.println("Reading from stdin... Unkown OS. Don't know how to send EOF.\n"),
                 }
             }
             break :stdin std.io.getStdIn();
         } else fl: {
+            if (flags.verbose) try print.verboseStderr("Attempting to open {?s}\n", .{file_path});
             const fl = cwd.openFile(file_path.?, .{ .mode = .read_only }) catch |err| switch (err) {
                 error.FileNotFound => {
                     try print.err("No such file in directory", .{});

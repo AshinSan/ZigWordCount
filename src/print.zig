@@ -8,9 +8,14 @@ pub fn println(comptime fmt: []const u8, args: anytype) !void {
 
 pub fn err(comptime fmt: ?[]const u8, args: anytype) !void {
     const stderr = std.io.getStdErr().writer();
-    if (fmt != null) {
-        try stderr.print("{?s}\n", .{fmt});
+    if (fmt) |format| {
+        try stderr.print("{s}", .{format});
         return;
     }
     try stderr.print("Error: {}\n", .{args});
+}
+
+pub fn verboseStderr(comptime fmt: []const u8, args: anytype) !void {
+    const stderr = std.io.getStdErr().writer();
+    try stderr.print(fmt, args);
 }

@@ -14,6 +14,7 @@ pub const Flags = struct {
     line: bool,
     word: bool,
     char: bool,
+    verbose: bool,
 
     const Self = @This();
 
@@ -22,6 +23,7 @@ pub const Flags = struct {
             .line = false,
             .word = false,
             .char = false,
+            .verbose = false,
         };
     }
 
@@ -52,6 +54,7 @@ pub const Flags = struct {
                         'l' => self.line = true,
                         'w' => self.word = true,
                         'c' => self.char = true,
+                        'v' => self.verbose = true,
                         else => {
                             try print.println("zwc: invalid option -- '{c}'", .{char});
                             try print.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
@@ -72,6 +75,8 @@ pub const Flags = struct {
                     self.word = true;
                 } else if (std.mem.eql(u8, arg, "--char") or std.mem.eql(u8, arg, "--character")) {
                     self.char = true;
+                } else if (std.mem.eql(u8, arg, "--verbose")) {
+                    self.verbose = true;
                 } else {
                     try print.println("zwc: invalid option -- '{s}'", .{arg});
                     try print.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
@@ -98,13 +103,14 @@ pub const Flags = struct {
             \\
             \\Arguments:
             \\-h, --help                    show this.
-            \\-l, --line                    only show amount of lines
-            \\-w, --word                    only show amount of words
-            \\-c, --char, --character       only show amount of characters
+            \\-l, --line                    only show amount of lines.
+            \\-w, --word                    only show amount of words.
+            \\-c, --char, --character       only show amount of characters.
+            \\-v, --verbose                 verbose mode.
             \\
             \\    --version                 show version
             \\
-            \\You can combine -l -w -c into -lwc -clw to show several (show all is default)
+            \\You can combine -l -w -c into -lwc -clw to show several (show all is default).
             \\
             \\Non existing valid arguments will cause an error.  
             \\

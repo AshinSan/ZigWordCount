@@ -1,5 +1,6 @@
 const std = @import("std");
 const Flags = @import("flags.zig").Flags;
+const print = @import("print.zig");
 
 const testing = std.testing;
 
@@ -28,6 +29,10 @@ pub fn zwc(reader: anytype, writer: anytype, allocator: std.mem.Allocator, flags
     var word_count: usize = 0;
     var char_count: usize = 0;
 
+    const verbose_line_count: *const usize = &line_count;
+    var verbose_word_count: usize = 0;
+    var verbose_char_count: usize = 0;
+
     while (true) {
         var buffer = Buffer.init(allocator);
         defer buffer.deinit();
@@ -43,6 +48,21 @@ pub fn zwc(reader: anytype, writer: anytype, allocator: std.mem.Allocator, flags
 
         while (words.next() != null) {
             word_count += 1;
+        }
+
+        if (flags.verbose) {
+            if (flags.line) {
+                try print.verboseStderr("Line: {} ", .{verbose_line_count.*});
+            }
+            if (flags.word) {
+                try print.verboseStderr("Words: {} ", .{word_count - verbose_word_count});
+                verbose_word_count = word_count;
+            }
+            if (flags.char) {
+                try print.verboseStderr("Chars: {}", .{char_count - verbose_char_count});
+                verbose_char_count = char_count;
+            }
+            try print.err("\n", .{});
         }
     }
 
