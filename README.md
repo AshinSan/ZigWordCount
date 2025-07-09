@@ -18,12 +18,11 @@ echo hello world | zwc
 
 ## Options
 
-- `-h`, `--help`:    Show help messages
-- `-l`, `--list`:    Show only line count
-- `-w`, `--word`:    Show only word count
-- `-c`, `--char`:    Show only character count
-- `-v`, `--verbose`: Verbose Mode 
-
+- `-h`, `--help`:    Show help messages.
+- `-l`, `--list`:    Show only line count.
+- `-w`, `--word`:    Show only word count.
+- `-c`, `--char`:    Show only character count.
+- `-v`, `--verbose`: Verbose Mode.
 - `--version`: Shows current version. 
 
 You can combine options:
