@@ -23,7 +23,8 @@ echo hello world | zwc
 - `-w`, `--word`:    Show only word count
 - `-c`, `--char`:    Show only character count
 - `-v`, `--verbose`: Verbose Mode 
--       `--version`: Shows current version. 
+
+- `--version`: Shows current version. 
 
 You can combine options:
 
