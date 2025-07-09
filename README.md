@@ -10,16 +10,22 @@ This is a small project I made to learn Zig and get comfortable with systems pro
 zwc [FILE] [OPTION]
 ```
 
+You can also pass other outputs instead of passing a file
+
+```sh
+echo hello world | zwc
+```
+
 ## Options
 
-- `-h`: Show help messages
-- `-l`: Show only line count
-- `-w`: Show only word count
-- `-c`: Show only character count
+- `-h`, `--help`: Show help messages
+- `-l`, `--list`: Show only line count
+- `-w`, `--word`: Show only word count
+- `-c`, `--char`: Show only character count
 
 You can combine options:
 
-`zwc input.txt -lwc` or `zwc input.txt -cw` etc.
+`zwc input.txt -lwc` or `zwc input.txt -cw --line` etc.
 
 ## Example
 
@@ -35,4 +41,4 @@ zig build
 
 ## License
 
-MIT (See LICENSE file)
+MIT (See [LICENSE](LICENSE) file)
