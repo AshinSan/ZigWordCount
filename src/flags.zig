@@ -32,9 +32,9 @@ pub const Flags = struct {
         self.char = true;
     }
 
-    pub fn checkArguments(self: *Self, args: [][:0]u8, logger: Logger) !?[]const u8 {
-        var file_path: ?[]const u8 = null;
+    pub fn checkArguments(self: *Self, args: [][:0]u8, logger: Logger, allocator: std.mem.Allocator) !std.ArrayList([]const u8) {
         var i: usize = 1;
+        var paths = std.ArrayList([]const u8).init(allocator);
 
         while (i < args.len) : (i += 1) {
             const arg: []u8 = args[i];
@@ -77,15 +77,12 @@ pub const Flags = struct {
                     try logger.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
                     std.process.exit(1);
                 }
-            } else if (file_path == null) {
-                file_path = arg;
             } else {
-                try logger.err("Too many positional arguments.\n", .{});
-                std.process.exit(1);
+                try paths.append(arg);
             }
         }
 
-        return file_path;
+        return paths;
     }
 
     fn printHelp(logger: Logger) !void {
