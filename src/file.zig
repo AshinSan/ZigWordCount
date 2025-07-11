@@ -50,7 +50,7 @@ pub fn fileGetter(file_paths: std.ArrayList([]const u8), logger: Logger, allocat
     }
 
     for (file_paths.items) |path| {
-        try logger.verbose("Attempting to open {?s}\n", .{path});
+        try logger.verbose("Attempting to open {s}\n", .{path});
 
         const cwd = std.fs.cwd();
 

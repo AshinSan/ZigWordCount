@@ -4,7 +4,7 @@
 
     .fingerprint = 0x12e2eb4702083fa5,
 
-    .minimun_zig_version = "0.14.1",
+    .minimum_zig_version = "0.15.0-dev.877+0adcfd60f",
 
     .dependencies = .{},
 
