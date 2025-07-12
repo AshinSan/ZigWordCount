@@ -21,14 +21,14 @@ pub fn main() !void {
 
     var logger = Logger.create(.{});
 
-    const paths = try flags.checkArguments(args, logger, allocator);
+    const paths = try flags.checkArguments(allocator, args, logger);
     defer paths.deinit();
 
     logger.verbose_mode = flags.verbose;
 
     flags.setDefaultIfFalse();
 
-    var files = try fileGetter(paths, logger, allocator);
+    var files = try fileGetter(allocator, paths, logger);
     defer files.deinit();
 
     for (files.file.items, files.final_path.items) |fs, path| {
@@ -38,7 +38,7 @@ pub fn main() !void {
         if (files.final_path.items.len > 1) {
             try logger.info("Showing result of: {s}\n", .{path});
         }
-        zwc(reader, logger, flags, allocator) catch |err| switch (err) {
+        zwc(allocator, reader, logger, flags) catch |err| switch (err) {
             error.IsDir => {},
             else => try logger.err("{any}", .{err}),
         };

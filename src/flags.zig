@@ -10,6 +10,7 @@ pub const Flags = struct {
     word: bool,
     char: bool,
     verbose: bool,
+    recursive: bool,
 
     const Self = @This();
 
@@ -19,6 +20,7 @@ pub const Flags = struct {
             .word = false,
             .char = false,
             .verbose = false,
+            .recursive = false,
         };
     }
 
@@ -32,7 +34,7 @@ pub const Flags = struct {
         self.char = true;
     }
 
-    pub fn checkArguments(self: *Self, args: [][:0]u8, logger: Logger, allocator: std.mem.Allocator) !std.ArrayList([]const u8) {
+    pub fn checkArguments(self: *Self, allocator: std.mem.Allocator, args: [][:0]u8, logger: Logger) !std.ArrayList([]const u8) {
         var i: usize = 1;
         var paths = std.ArrayList([]const u8).init(allocator);
 
@@ -50,6 +52,7 @@ pub const Flags = struct {
                         'w' => self.word = true,
                         'c' => self.char = true,
                         'v' => self.verbose = true,
+                        'r' => self.recursive = true,
                         else => {
                             try logger.err("zwc: invalid option -- '{c}'", .{char});
                             try logger.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});
@@ -72,6 +75,8 @@ pub const Flags = struct {
                     self.char = true;
                 } else if (std.mem.eql(u8, arg, "--verbose")) {
                     self.verbose = true;
+                } else if (std.mem.eql(u8, arg, "--recursive")) {
+                    self.recursive = true;
                 } else {
                     try logger.err("zwc: invalid option -- '{s}'", .{arg});
                     try logger.err("Try 'zwc --help' or 'zwc -h' for more information.", .{});

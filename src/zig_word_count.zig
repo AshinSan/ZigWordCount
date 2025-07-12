@@ -24,7 +24,7 @@ const Buffer = struct {
     }
 };
 
-pub fn zwc(reader: anytype, logger: Logger, flags: Flags, allocator: std.mem.Allocator) !void {
+pub fn zwc(allocator: std.mem.Allocator, reader: anytype, logger: Logger, flags: Flags) !void {
     var line_count: usize = 0;
     var word_count: usize = 0;
     var char_count: usize = 0;

@@ -30,7 +30,7 @@ const AbsolutePath = struct {
     }
 };
 
-pub fn fileGetter(file_paths: std.ArrayList([]const u8), logger: Logger, allocator: Allocator) !AbsolutePath {
+pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), logger: Logger) !AbsolutePath {
     var files = AbsolutePath.init(allocator);
 
     if (file_paths.items.len == 0) {
