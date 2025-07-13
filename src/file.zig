@@ -74,7 +74,7 @@ pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), l
                         if (flags.recursive) {
                             var dir_path = std.ArrayList([]const u8).init(allocator);
 
-                            try dir_path.append(try std.fmt.allocPrint(allocator, "{s}{s}/", .{ path, entry.name }));
+                            try dir_path.append(try std.fs.path.join(allocator, &[_][]const u8{ path, entry.name }));
 
                             const recursive_files = try fileGetter(allocator, dir_path, logger, flags);
 
@@ -89,9 +89,7 @@ pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), l
 
                     try files.file.append(try getFile(dir, entry.name, logger));
 
-                    const formated_path = try std.fmt.allocPrint(allocator, "{s}{s}", .{ path, entry.name });
-
-                    try files.final_path.append(formated_path);
+                    try files.final_path.append(try std.fs.path.join(allocator, &[_][]const u8{ path, entry.name }));
                 }
             },
         }
