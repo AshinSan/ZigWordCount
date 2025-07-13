@@ -1,12 +1,13 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const Logger = @import("logger.zig").Logger;
+const Flags = @import("flags.zig").Flags;
 
 const Allocator = std.mem.Allocator;
 
-const PathType = union(enum) {
-    file: bool,
-    dir: bool,
+const PathType = enum {
+    File,
+    Dir,
 };
 
 const AbsolutePath = struct {
@@ -30,7 +31,7 @@ const AbsolutePath = struct {
     }
 };
 
-pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), logger: Logger) !AbsolutePath {
+pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), logger: Logger, flags: Flags) !AbsolutePath {
     var files = AbsolutePath.init(allocator);
 
     if (file_paths.items.len == 0) {
@@ -57,17 +58,35 @@ pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), l
         const Path_Type = try getPathStatType(cwd, path, logger);
 
         switch (Path_Type) {
-            .file => {
+            .File => {
                 const fl = try getFile(cwd, path, logger);
 
                 try files.file.append(fl);
                 try files.final_path.append(path);
             },
-            .dir => {
+            .Dir => {
                 var dir = try std.fs.cwd().openDir(path, .{ .iterate = true });
                 var iterator = dir.iterate();
 
                 while (try iterator.next()) |entry| {
+                    const inside_path_type = try getPathStatType(dir, entry.name, logger);
+                    if (inside_path_type == PathType.Dir) {
+                        if (flags.recursive) {
+                            var dir_path = std.ArrayList([]const u8).init(allocator);
+
+                            try dir_path.append(try std.fmt.allocPrint(allocator, "{s}{s}/", .{ path, entry.name }));
+
+                            const recursive_files = try fileGetter(allocator, dir_path, logger, flags);
+
+                            try files.file.appendSlice(recursive_files.file.items);
+                            try files.final_path.appendSlice(recursive_files.final_path.items);
+
+                            continue;
+                        }
+
+                        continue;
+                    }
+
                     try files.file.append(try getFile(dir, entry.name, logger));
 
                     const formated_path = try std.fmt.allocPrint(allocator, "{s}{s}", .{ path, entry.name });
@@ -97,14 +116,16 @@ fn getFile(dir: std.fs.Dir, path: []const u8, logger: Logger) !std.fs.File {
 }
 
 fn getPathStatType(dir: std.fs.Dir, path: []const u8, logger: Logger) !PathType {
-    const stat = try dir.statFile(path);
-
-    switch (stat.kind) {
-        .file => return PathType{ .file = true },
-        .directory => return PathType{ .dir = true },
+    const stat = dir.statFile(path) catch |err| switch (err) {
         else => {
             try logger.err("No such file or directory\n", .{});
             std.process.exit(1);
         },
+    };
+
+    switch (stat.kind) {
+        .file => return PathType.File,
+        .directory => return PathType.Dir,
+        else => unreachable,
     }
 }

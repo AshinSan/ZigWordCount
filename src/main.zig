@@ -28,7 +28,7 @@ pub fn main() !void {
 
     flags.setDefaultIfFalse();
 
-    var files = try fileGetter(allocator, paths, logger);
+    var files = try fileGetter(allocator, paths, logger, flags);
     defer files.deinit();
 
     for (files.file.items, files.final_path.items) |fs, path| {
