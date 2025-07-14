@@ -6,7 +6,7 @@ const Flags = @import("flags.zig").Flags;
 
 const fileGetter = @import("file.zig").fileGetter;
 
-const zwc = @import("zig_word_count.zig").zwc;
+const zig_word_count = @import("zig_word_count.zig");
 
 pub fn main() !void {
     var timer = try std.time.Timer.start();
@@ -31,6 +31,8 @@ pub fn main() !void {
     var files = try fileGetter(allocator, paths, logger, flags);
     defer files.deinit();
 
+    var summary = zig_word_count.Summary.create();
+
     for (files.file.items, files.final_path.items) |fs, path| {
         const reader = fs.reader();
         defer fs.close();
@@ -38,10 +40,10 @@ pub fn main() !void {
         if (files.final_path.items.len > 1) {
             try logger.info("Showing result of: {s}\n", .{path});
         }
-        zwc(allocator, reader, logger, flags) catch |err| switch (err) {
-            error.IsDir => {},
-            else => try logger.err("{any}", .{err}),
-        };
+        summary.add(try zig_word_count.zwc(allocator, reader, logger, flags));
+    }
+    if (files.final_path.items.len > 1) {
+        try summary.printSummary(logger, flags);
     }
     try logger.verbose("Execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms});
 }

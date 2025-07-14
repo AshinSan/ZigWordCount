@@ -24,7 +24,36 @@ const Buffer = struct {
     }
 };
 
-pub fn zwc(allocator: std.mem.Allocator, reader: anytype, logger: Logger, flags: Flags) !void {
+pub const Summary = struct {
+    line: usize,
+    word: usize,
+    char: usize,
+
+    const Self = @This();
+
+    pub fn create() Summary {
+        return .{
+            .line = 0,
+            .word = 0,
+            .char = 0,
+        };
+    }
+
+    pub fn add(self: *Self, summary: Summary) void {
+        self.line += summary.line;
+        self.word += summary.word;
+        self.char += summary.char;
+    }
+
+    pub fn printSummary(self: *Self, logger: Logger, flags: Flags) !void {
+        try logger.info("\n-- Multi file Result: --\n", .{});
+        if (flags.line) try logger.info("> Total Line count: {}\n", .{self.line});
+        if (flags.word) try logger.info("> Total Word count: {}\n", .{self.word});
+        if (flags.char) try logger.info("> Total Char count: {}\n", .{self.char});
+    }
+};
+
+pub fn zwc(allocator: std.mem.Allocator, reader: anytype, logger: Logger, flags: Flags) !Summary {
     var line_count: usize = 0;
     var word_count: usize = 0;
     var char_count: usize = 0;
@@ -66,6 +95,12 @@ pub fn zwc(allocator: std.mem.Allocator, reader: anytype, logger: Logger, flags:
     if (flags.line) try logger.info("> Line count -- {d}\n", .{line_count});
     if (flags.word) try logger.info("> word count -- {d}\n", .{word_count});
     if (flags.char) try logger.info("> char count -- {d}\n", .{char_count});
+
+    return Summary{
+        .line = line_count,
+        .word = word_count,
+        .char = char_count,
+    };
 }
 
 fn readLineDynamic(reader: anytype, buffer: *Buffer, delimiter: u8) !void {
