@@ -30,5 +30,5 @@ pub fn main() !void {
 
     try summary.printSummary(logger, flags);
 
-    try logger.verbose("Execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms});
+    try logger.verbose("Total program execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms});
 }
