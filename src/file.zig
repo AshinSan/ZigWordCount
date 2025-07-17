@@ -3,6 +3,8 @@ const builtin = @import("builtin");
 const Logger = @import("logger.zig").Logger;
 const Flags = @import("flags.zig").Flags;
 
+const zwc = @import("zig_word_count.zig");
+
 const Allocator = std.mem.Allocator;
 
 const PathType = enum {
@@ -10,31 +12,8 @@ const PathType = enum {
     Dir,
 };
 
-const AbsolutePath = struct {
-    final_path: std.ArrayList([]const u8),
-    file: std.ArrayList(std.fs.File),
-
-    const Self = @This();
-
-    pub fn init(allocator: Allocator) AbsolutePath {
-        const path = AbsolutePath{
-            .final_path = std.ArrayList([]const u8).init(allocator),
-            .file = std.ArrayList(std.fs.File).init(allocator),
-        };
-
-        return path;
-    }
-
-    pub fn deinit(self: *Self) void {
-        self.file.deinit();
-        self.final_path.deinit();
-    }
-};
-
-pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), logger: Logger, flags: Flags) !AbsolutePath {
-    var files = AbsolutePath.init(allocator);
-
-    if (file_paths.items.len == 0) {
+pub fn fileStreamer(allocator: Allocator, file_paths: []const []const u8, logger: Logger, flags: Flags) !zwc.Summary {
+    if (file_paths.len == 0) {
         try logger.verbose("Attempting to read from stdin.\n", .{});
         if (std.io.getStdIn().isTty()) {
             switch (builtin.target.os.tag) {
@@ -45,57 +24,69 @@ pub fn fileGetter(allocator: Allocator, file_paths: std.ArrayList([]const u8), l
             }
         }
 
-        try files.file.append(std.io.getStdIn());
-        try files.final_path.append("Stdin");
-        return files;
+        const stdin = std.io.getStdIn();
+        const reader = stdin.reader();
+
+        return zwc.wordCounter(allocator, reader, logger, flags);
     }
 
-    for (file_paths.items) |path| {
+    var summary = zwc.Summary.create();
+
+    for (file_paths) |path| {
         try logger.verbose("Attempting to open {s}\n", .{path});
 
-        const cwd = std.fs.cwd();
+        const dir = std.fs.cwd();
 
-        const Path_Type = try getPathStatType(cwd, path, logger);
+        const Path_Type = try getPathStatType(dir, path, logger);
 
         switch (Path_Type) {
             .File => {
-                const fl = try getFile(cwd, path, logger);
-
-                try files.file.append(fl);
-                try files.final_path.append(path);
+                summary.add(try fileProcessor(allocator, dir, path, logger, flags));
             },
             .Dir => {
-                var dir = try std.fs.cwd().openDir(path, .{ .iterate = true });
-                var iterator = dir.iterate();
-
-                while (try iterator.next()) |entry| {
-                    const inside_path_type = try getPathStatType(dir, entry.name, logger);
-                    if (inside_path_type == PathType.Dir) {
-                        if (flags.recursive) {
-                            var dir_path = std.ArrayList([]const u8).init(allocator);
-
-                            try dir_path.append(try std.fs.path.join(allocator, &[_][]const u8{ path, entry.name }));
-
-                            const recursive_files = try fileGetter(allocator, dir_path, logger, flags);
-
-                            try files.file.appendSlice(recursive_files.file.items);
-                            try files.final_path.appendSlice(recursive_files.final_path.items);
-
-                            continue;
-                        }
-
-                        continue;
-                    }
-
-                    try files.file.append(try getFile(dir, entry.name, logger));
-
-                    try files.final_path.append(try std.fs.path.join(allocator, &[_][]const u8{ path, entry.name }));
-                }
+                summary.merge(try dirProcessor(allocator, dir, path, logger, flags));
             },
         }
     }
+    return summary;
+}
 
-    return files;
+fn dirProcessor(allocator: Allocator, directory: std.fs.Dir, path: []const u8, logger: Logger, flags: Flags) anyerror!zwc.Summary {
+    var dir = try directory.openDir(path, .{ .iterate = true });
+    var iterator = dir.iterate();
+
+    var summary = zwc.Summary.create();
+
+    while (try iterator.next()) |entry| {
+        const joined_path = try std.fs.path.join(allocator, &[_][]const u8{ path, entry.name });
+        defer allocator.free(joined_path);
+
+        const path_type = try getPathStatType(dir, entry.name, logger);
+        if (path_type == PathType.Dir) {
+            if (flags.recursive) {
+                summary.add(try fileStreamer(allocator, &[_][]const u8{joined_path}, logger, flags));
+                continue;
+            }
+            continue;
+        }
+        summary.add(try fileProcessor(allocator, dir, entry.name, logger, flags));
+    }
+
+    return summary;
+}
+
+fn fileProcessor(allocator: Allocator, dir: std.fs.Dir, path: []const u8, logger: Logger, flags: Flags) !zwc.Summary {
+    var timer = try std.time.Timer.start();
+    defer logger.verbose("Execution time: {}ms\n", .{timer.read() / std.time.ns_per_ms}) catch unreachable;
+
+    const fl = try getFile(dir, path, logger);
+    defer fl.close();
+
+    const reader = fl.reader();
+
+    try logger.info("Showing result of: {s}\n", .{path});
+
+    return try zwc.wordCounter(allocator, reader, logger, flags);
 }
 
 fn getFile(dir: std.fs.Dir, path: []const u8, logger: Logger) !std.fs.File {
@@ -116,7 +107,7 @@ fn getFile(dir: std.fs.Dir, path: []const u8, logger: Logger) !std.fs.File {
 fn getPathStatType(dir: std.fs.Dir, path: []const u8, logger: Logger) !PathType {
     const stat = dir.statFile(path) catch |err| switch (err) {
         else => {
-            try logger.err("No such file or directory\n", .{});
+            try logger.err("Can't find {s}\nNo such file or directory.\n", .{path});
             std.process.exit(1);
         },
     };

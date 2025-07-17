@@ -29,6 +29,8 @@ pub const Summary = struct {
     word: usize,
     char: usize,
 
+    iterations: usize = 0,
+
     const Self = @This();
 
     pub fn create() Summary {
@@ -40,20 +42,30 @@ pub const Summary = struct {
     }
 
     pub fn add(self: *Self, summary: Summary) void {
+        self.iterations += 1;
         self.line += summary.line;
         self.word += summary.word;
         self.char += summary.char;
     }
 
-    pub fn printSummary(self: *Self, logger: Logger, flags: Flags) !void {
-        try logger.info("\n-- Multi file Result: --\n", .{});
-        if (flags.line) try logger.info("> Total Line count: {}\n", .{self.line});
-        if (flags.word) try logger.info("> Total Word count: {}\n", .{self.word});
-        if (flags.char) try logger.info("> Total Char count: {}\n", .{self.char});
+    pub fn merge(self: *Self, summary: Summary) void {
+        self.iterations += summary.iterations;
+        self.line += summary.line;
+        self.word += summary.word;
+        self.char += summary.char;
+    }
+
+    pub fn printSummary(self: Self, logger: Logger, flags: Flags) !void {
+        if (self.iterations > 1) {
+            try logger.info("\n-- Multi file Result: --\n", .{});
+            if (flags.line) try logger.info("> Total Line count: {}\n", .{self.line});
+            if (flags.word) try logger.info("> Total Word count: {}\n", .{self.word});
+            if (flags.char) try logger.info("> Total Char count: {}\n", .{self.char});
+        }
     }
 };
 
-pub fn zwc(allocator: std.mem.Allocator, reader: anytype, logger: Logger, flags: Flags) !Summary {
+pub fn wordCounter(allocator: std.mem.Allocator, reader: anytype, logger: Logger, flags: Flags) !Summary {
     var line_count: usize = 0;
     var word_count: usize = 0;
     var char_count: usize = 0;
