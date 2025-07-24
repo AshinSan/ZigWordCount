@@ -112,7 +112,8 @@ pub const Flags = struct {
             \\Non existing valid arguments will cause an error.  
             \\
             \\If passing an argument without any attempt of a filepath your terminal will 
-            \\grab your input until you send the EOF command. 
+            \\grab your input until you send the EOF command.
+            \\
         , .{});
     }
 };
